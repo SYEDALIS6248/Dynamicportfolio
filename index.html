@@ -865,6 +865,13 @@
                     githubLink.innerHTML = `<i class="fab fa-github"></i>`;
                     contactLinksContainer.appendChild(githubLink);
                 }
+                if (profile.Phone) {
+                    const phoneLink = document.createElement('a');
+                    phoneLink.href = `tel:${profile.Phone}`;
+                    phoneLink.setAttribute('aria-label', 'Call me');
+                    phoneLink.innerHTML = `<i class="fas fa-phone"></i>`;
+                    contactLinksContainer.appendChild(phoneLink);
+                }
 
 
                 // 2. Populate Skills
