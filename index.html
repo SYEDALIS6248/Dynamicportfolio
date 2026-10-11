@@ -290,9 +290,9 @@
         <a href="#education">Education</a>
         <a href="#certifications">Certifications</a>
         <a href="#contact">Contact</a>
-        <!--a href="#" id="resumeLink" target="_blank" download>
-            <i class="fas fa-download"></i> Resume
-    </a-->
+        <a href="#" id="resumeLink" hidden target="_blank" rel="noopener" download="Syed_Ali_Sulaiman_Resume.pdf">
+    <i class="fas fa-download"></i> Resume
+</a>
     </nav>
 
     <div class="container">
@@ -480,12 +480,19 @@
 
                 // Populate Resume Link
                 const resumeLink = document.getElementById("resumeLink");
-                if (profile.ResumeURL && resumeLink) {
-                    resumeLink.href = profile.ResumeURL;
-                } else if (resumeLink) {
-                    resumeLink.style.display = 'none'; // Hide button if no URL
-                }
+if (resumeLink) {
+    let url = (profile.ResumeURL || '').trim();
+    // Convert a Google Drive share link to a direct download link
+    const drive = url.match(/drive\.google\.com\/file\/d\/([^/?]+)/) || url.match(/drive\.google\.com\/.*[?&]id=([^&]+)/);
+    if (drive) url = `https://drive.google.com/uc?export=download&id=${drive[1]}`;
 
+    if (url) {
+        resumeLink.href = url;
+        resumeLink.hidden = false;
+    } else {
+        resumeLink.hidden = true; // no URL, keep it hidden
+    }
+}
                 // Populate Contact Links
                 const contactLinksContainer = document.getElementById("contactLinks");
                 contactLinksContainer.innerHTML = ""; // Clear loading text
