@@ -160,13 +160,15 @@
 
         /* --- Projects: static cards (CSS only; flip markup from JS is flattened) --- */
                 .marquee {
-            overflow: hidden;
-            -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
-            mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
-        }
-        .projects-grid { display: flex; width: max-content; animation: marquee 60s linear infinite; }
-        .marquee:hover .projects-grid { animation-play-state: paused; }
-        @keyframes marquee { to { transform: translateX(-50%); } }
+    overflow-x: auto;
+    scrollbar-width: none;
+    cursor: grab;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+}
+.marquee::-webkit-scrollbar { display: none; }
+.marquee.dragging { cursor: grabbing; user-select: none; }
+.projects-grid { display: flex; width: max-content; }
         .project-card { display: flex; flex: 0 0 300px; width: 300px; margin-right: 1.6rem; height: auto; perspective: none; }
         .project-inner { width: 100%; }
         .project-inner {
@@ -660,21 +662,62 @@
         });
 
                 // Duplicates project cards once so the marquee loops seamlessly (UI only)
-        (function () {
-            const grid = document.getElementById('projectsGrid');
-            let done = false;
-            new MutationObserver(() => {
-                const cards = grid.querySelectorAll('.project-card');
-                if (done || !cards.length) return;
-                done = true;
-                cards.forEach(card => {
-                    const clone = card.cloneNode(true);
-                    clone.setAttribute('aria-hidden', 'true');
-                    clone.querySelectorAll('a').forEach(a => a.tabIndex = -1);
-                    grid.appendChild(clone);
-                });
-            }).observe(grid, { childList: true });
-        })();
+       (function () {
+    const marquee = document.querySelector('.marquee');
+    const grid = document.getElementById('projectsGrid');
+    let paused = false, cloned = false, dragging = false, startX = 0, startScroll = 0, moved = 0;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Clone cards once for the endless loop
+    new MutationObserver(() => {
+        const cards = grid.querySelectorAll('.project-card');
+        if (cloned || !cards.length) return;
+        cloned = true;
+        cards.forEach(card => {
+            const clone = card.cloneNode(true);
+            clone.setAttribute('aria-hidden', 'true');
+            clone.querySelectorAll('a').forEach(a => a.tabIndex = -1);
+            grid.appendChild(clone);
+        });
+    }).observe(grid, { childList: true });
+
+    // Auto scroll
+    let pos = 0;
+    function step() {
+        if (!paused && !dragging && cloned && !reduceMotion) {
+            marquee.scrollLeft += 0.5;
+        }
+        // Loop: jump back when half (the original set) is passed
+        const half = grid.scrollWidth / 2;
+        if (half && marquee.scrollLeft >= half) marquee.scrollLeft -= half;
+        if (half && marquee.scrollLeft <= 0 && dragging) marquee.scrollLeft += half;
+        requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+
+    // Pause on hover / touch
+    marquee.addEventListener('mouseenter', () => paused = true);
+    marquee.addEventListener('mouseleave', () => { paused = false; dragging = false; marquee.classList.remove('dragging'); });
+    marquee.addEventListener('touchstart', () => paused = true, { passive: true });
+    marquee.addEventListener('touchend', () => setTimeout(() => paused = false, 2000));
+
+    // Mouse drag
+    marquee.addEventListener('mousedown', e => {
+        dragging = true; moved = 0;
+        startX = e.pageX; startScroll = marquee.scrollLeft;
+        marquee.classList.add('dragging');
+    });
+    window.addEventListener('mouseup', () => { dragging = false; marquee.classList.remove('dragging'); });
+    marquee.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        moved = e.pageX - startX;
+        marquee.scrollLeft = startScroll - moved;
+    });
+    // Don't open a project link after a drag
+    marquee.addEventListener('click', e => {
+        if (Math.abs(moved) > 5) { e.preventDefault(); moved = 0; }
+    }, true);
+})();
     
     </script>
 </body>
