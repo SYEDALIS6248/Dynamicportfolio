@@ -403,8 +403,10 @@
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = "";
-    data.forEach(item => {
-        const title = item.Title || item.Degree;
+    data
+    .filter(item => (item.Show || '').trim().toLowerCase() !== 'no')
+    .forEach(item => {
+    const title = item.Title || item.Degree;
         const entity = item.Company || item.Institution;
         const period = item.Duration || item.Year;
         const details = item.Description || item.Percentage || "";
